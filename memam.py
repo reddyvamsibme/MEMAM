@@ -29,6 +29,10 @@ class Hospital:
 
 class Emergencies:
 
+    def normals(self):
+        # Defines normal parameter ranges for a patient of age xx
+        pass
+
     def code_blue(self, blood_pressure, pulse_rate, etc):
         if pulse_rate < 40:
             # Alert the nursing station
@@ -51,6 +55,7 @@ class Emergencies:
 
     def Code_black:
         pass
+
 
 
 class Paging:
