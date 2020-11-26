@@ -9,22 +9,27 @@ Emad Mohammed Naveed <enaveed1@jhu.edu>
 
 import time
 
+
 class Hospital:
     def floors:
         pass
+
     def nursing_station:
         pass
+
     def control_unit:
         pass
+
     def equipment:
         pass
+
     def employee_log:
         pass
 
 
 class Emergencies:
 
-    def Cardiac_Arrest(self, blood_pressure,pulse_rate, etc ):
+    def Cardiac_Arrest(self, blood_pressure, pulse_rate, etc):
         if pulse_rate < 40:
             # Alert the nursing station
         pass
@@ -45,7 +50,6 @@ class Emergencies:
         pass
 
 
-
 class Paging:
 
     def alert_nurse:
@@ -63,11 +67,14 @@ class Paging:
     def control_surgeons:
         pass
 
+
 class mechanism:
     #
 
+
 class patient_log:
     # patient record name format : XX(Name Initials)
+
 
 class visualization:
     # GUI Blocks
