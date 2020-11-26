@@ -29,18 +29,21 @@ class Hospital:
 
 class Emergencies:
 
-    def Cardiac_Arrest(self, blood_pressure, pulse_rate, etc):
+    def code_blue(self, blood_pressure, pulse_rate, etc):
         if pulse_rate < 40:
             # Alert the nursing station
         pass
 
-    def HBPD:
+    def blood_pressure:
+        pass
+
+    def temperature:
         pass
 
     def Labor_pains:
         pass
 
-    def breathing_prob:
+    def breathing:
         pass
 
     def Equipment_Failure:
