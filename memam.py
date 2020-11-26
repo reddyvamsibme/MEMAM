@@ -69,12 +69,14 @@ class Paging:
 
 
 class mechanism:
-    #
+    pass
 
 
 class patient_log:
+    pass
     # patient record name format : XX(Name Initials)
 
 
 class visualization:
+    pass
     # GUI Blocks
