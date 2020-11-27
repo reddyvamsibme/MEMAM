@@ -8,6 +8,7 @@ Emad Mohammed Naveed <enaveed1@jhu.edu>
 '''
 
 import time
+import xlrd
 
 
 class Hospital:
@@ -27,15 +28,20 @@ class Hospital:
         pass
 
 
+
 class Emergencies:
+
+    def __init__(self, file):
+        pass
+
+    def read_patient(self):
+        pass
 
     def normals(self):
         # Defines normal parameter ranges for a patient of age xx
         pass
 
-    def code_blue(self, blood_pressure, pulse_rate, etc):
-        if pulse_rate < 40:
-            # Alert the nursing station
+    def code_blue(self):
         pass
 
     def blood_pressure:
