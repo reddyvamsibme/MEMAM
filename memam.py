@@ -9,6 +9,8 @@ Emad Mohammed Naveed <enaveed1@jhu.edu>
 
 import time
 import xlrd
+import os.path
+from os import path
 
 
 class Hospital:
@@ -30,9 +32,6 @@ class Hospital:
 
 
 class Emergencies:
-
-    def __init__(self, file):
-        pass
 
     def read_patient(self):
         pass
@@ -86,9 +85,10 @@ class mechanism:
     pass
 
 
-class patient_log:
+class log:
     pass
     # patient record name format : XX(Name Initials)
+    # different functions for patients_log, nurses_log, etc
 
 
 class visualization:
