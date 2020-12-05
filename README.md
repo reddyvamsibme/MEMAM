@@ -24,7 +24,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
 5. Redirect to the root folder and check the saved .png files for solutions
 
 ## Exceptions
-1. Do not the patient_log.xlsx excel sheet, it is a replica of physiological data feedback from bedside monitor
+1. Do not edit the patient_log1.xlsx excel sheet, it is a replica of physiological data feedback from bedside monitor
 2. The code is designed to only work on '.xlsx' format patient data and the specific data logs in '.txt' file
 3. The encryption and decryption is username and password specific, we have displayed the actual combination in the code for beginers to understand and verify the code
 4. The excess use of global variables can be avoided but that will fail the GUI refresh rate
