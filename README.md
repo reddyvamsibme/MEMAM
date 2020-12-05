@@ -125,3 +125,10 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 1: Read the .xlsx extension files only.
     + Step 2: Identifying specific patient identification details
     + Step 3: Creating time domain data for each vital by extracting rows
+
+Graphical User Interface:
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM1.jpg "GUI graphic")
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM2.jpg "GUI MEMAM graphic")
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM3.jpg "GUI MEMAM graphic")
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM4.jpg "GUI MEMAM graphic")
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM5.jpg "GUI MEMAM graphic")
