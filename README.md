@@ -127,7 +127,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 3: Creating time domain data for each vital by extracting rows
 
 Graphical User Interface:
-![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM1.png "GUI graphic")
+![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM1.jpg "GUI graphic")
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM2.jpg "GUI MEMAM graphic")
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM3.jpg "GUI MEMAM graphic")
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM4.jpg "GUI MEMAM graphic")
