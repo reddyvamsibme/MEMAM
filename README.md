@@ -17,7 +17,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
    pip3 install -r requirements.txt
    ```
 3. Open memam.py and change the excel sheets names and log text filenames, if you wish apply the code on your custom file
-4. Run lazor_final.py from the repository root directory, make sure to have patient_log1.xlsx
+4. Run memam.py from the repository root directory, make sure to have patient_log1.xlsx in the root directory.
     ```bash
     python3 memam.py
     ``` 
