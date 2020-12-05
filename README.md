@@ -17,11 +17,14 @@ The code is documented in PEP8 style formatting with clear comments and designed
    pip3 install -r requirements.txt
    ```
 3. Open memam.py and change the excel sheets names and log text filenames, if you wish apply the code on your custom file
-4. Run lazor_final.py from the repository root directory
+4. Run lazor_final.py from the repository root directory, make sure to have patient_log1.xlsx
     ```bash
     python3 memam.py
     ``` 
-5. Redirect to the root folder and check the saved .png files for solutions
+5. For the encryption to start, close GUI interface (abrupt quitting of application using performance monitors may cause system erros)
+6. Select the option when prompted to show the patient data log. Incorrect username or password may restrict the view access
+7. Redirect to the root file to see the '.txt' files in the patient#_pass filenames for view encrypted data. 
+8. The code is formatted for simultaneous data visualization of two patients in the hospital and can be extended to at least 5-10 patient without GPU. 
 
 ## Exceptions
 1. Do not edit the patient_log1.xlsx excel sheet, it is a replica of physiological data feedback from bedside monitor
@@ -29,6 +32,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
 3. The encryption and decryption is username and password specific, we have displayed the actual combination in the code for beginers to understand and verify the code
 4. The excess use of global variables can be avoided but that will fail the GUI refresh rate
 5. If the refresh rate is slow on GUI,especially Windows OS, please stop all background processes.
+6. Make sure to install either pip or brew install incase of errors with import.
 
 ## Code Architecture
 * **Class Input**  
