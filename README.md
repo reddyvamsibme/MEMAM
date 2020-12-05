@@ -28,7 +28,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
 2. The code is designed to only work on '.xlsx' format patient data and the specific data logs in '.txt' file
 3. The encryption and decryption is username and password specific, we have displayed the actual combination in the code for beginers to understand and verify the code
 4. The excess use of global variables can be avoided but that will fail the GUI refresh rate
-5. Do not input empty files or stop the code in between without a log entry, it will damage the log files
+5. If the refresh rate is slow on GUI,especially Windows OS, please stop all background processes.
 
 ## Code Architecture
 * **Class Input**  
