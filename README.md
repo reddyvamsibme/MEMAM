@@ -130,7 +130,8 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 2: Identifying specific patient identification details
     + Step 3: Creating time domain data for each vital by extracting rows
 
-Graphical User Interface:
+## Graphical User Interface:
+
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM_1.jpg "GUI graphic")
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM_2.jpg "GUI MEMAM graphic")
 ![alt text](https://github.com/reddyvamsibme/MEMAM/blob/main/pics/MEMAM_3.jpg "GUI MEMAM graphic")
