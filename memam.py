@@ -1,3 +1,1092 @@
+'''
+Software Carpentry, Fall 2020
+MEMAM: Medical Emergencies Management And Alert Mechanism
+Submitted by
+Vamsi Reddy <vreddy17@jhu.edu>
+Emad Mohammed Naveed <enaveed1@jhu.edu>
+'''
+# Import packages
+import os
+import random
+# Excel sheet manipulations
+import xlrd
+# Password hashing and no echo
+import hashlib
+import getpass
+import time as tim
+# Visualization
+import tkinter as tk
+from tkmacosx import Button
+from datetime import time as timer1
+
+# Defining variables to act as a central database
+# Using Global variables to improve quality of live updates
+
+# The list of available resident interns
+intern_list = [
+    'intern01',
+    'intern02',
+    'intern03',
+    'intern04',
+    'intern05',
+    'intern06',
+    'intern07',
+    'intern08',
+    'intern09',
+    'intern10',
+    'intern11',
+    'intern12',
+    'intern13',
+    'intern14',
+    'intern15',
+    'intern16']
+# The list of available surgeons
+surgeon_list = [
+    'surgeon01',
+    'surgeon02',
+    'surgeon03',
+    'surgeon04',
+    'surgeon05',
+    'surgeon06']
+# The list of available residents
+resident_list = [
+    'resident01',
+    'resident02',
+    'resident03',
+    'resident04',
+    'resident05',
+    'resident06',
+    'resident07',
+    'resident08']
+# Patient identification tags and control modes
+patient_key = {'JHU1234': '404', 'JHU5678': '567'}
+patient_mode = {'JHU1234': [0, 0, 0, 0, 0, 0],
+                'JHU5678': [0, 0, 0, 0, 0, 0]}
+patient_mode_e = {'JHU1234': [0, 0, 0, 0, 0, 0],
+                  'JHU5678': [0, 0, 0, 0, 0, 0]}
+# control modes for alert protocols and updating
+code_s = [{1: [], 2: [], 4: []}, {1: [], 2: [], 4: []}]
+code_ri = [{1: [], 2: [], 3: [], 4: [], 5: [], 6: []},
+           {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}]
+code_re = [{1: [], 2: [], 3: [], 4: [], 5: [], 6: []},
+           {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}]
+code_eri = [{1: [], 2: [], 3: [], 4: [], 5: [], 6: []},
+            {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}]
+code_ere = [{1: [], 2: [], 3: [], 4: [], 5: [], 6: []},
+            {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}]
+# Callable counters for real-time updation
+counter = [{1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3},
+           {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3}]
+counter_e = [{1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3},
+             {1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3}]
+DATA = [0, 0]
+PAGES = [[], []]
+# Equipment units available
+EQUIPMENT_COUNT = 10
+
+
+
+class Input:
+    '''
+    This class handles reading and extraction of patient's vitals from bedside
+    monitor, in this case, we have an excel sheet (in .xlsx format)
+    Step 1: Read the .xlsx extension files only.
+    Step 2: Identifying specific patient identification details
+    Step 3: Creating time domain data for each vital by extracting rows
+    '''
+
+    def __init__(self, file, id_record):
+        '''
+            The __init__ method will initialize the object’s state.
+            Initializes the function of the class when
+            an object of class is created.
+            In this case, the file name and identification tags of patients
+            for real-time update
+            **Input Parameters**
+                file: *str*
+                    The filename to read and extract information
+                    The filename to save the output image with solution
+                id_record: *str*
+                    Number for real-time update on GUI
+            **Returns**
+                None
+        '''
+        self.file = file
+        # Initializing position variables
+        self.id_record = id_record
+
+    def __call__(self):
+        '''
+        The __call__ method will read and extract the specific .xlsx file
+
+        **Input Parameters**
+            None
+        **Returns**
+            pat_id: *list, str, int, optional*
+                The patient id corresponds to a specific patient
+            patient_record: **
+                The patient record has the details about the patient
+                age, room number (typical hospital register)
+        '''
+        # Read the all the sheets and extracting sheet names
+        patient_record, all_sheets = self.read_patient(self.file)
+        # Finding the number of patients in the hospital
+        length = len(all_sheets.sheets())
+        # Details about each patient by index
+        patient_id = all_sheets.sheet_by_index(self.id_record)
+        # Number of patients
+        num_rowsid = patient_id.nrows
+        pat_id = []
+        for i in range(1, num_rowsid):
+            time_data = patient_id.row_values(i)
+            pat_id.append(time_data)
+        return pat_id, patient_record[self.id_record]
+
+    def read_patient(self, file):
+        '''
+        This function will read and extract the information
+        from a given patient log, in actual hospital settings,
+        it is just a real-time physiological data feedback
+
+        **Input Parameters**
+            file: *str*
+                The name of the file
+        **Returns**
+            patient_record: *list, optional*
+                The updated grid system
+            all_sheets: *list*
+                The path to the sheets in the workbook
+        '''
+        file = "patient_log1.xlsx"
+        all_sheets = xlrd.open_workbook(file)
+        patient_record = []
+        for sheet in all_sheets.sheets():
+            patient_name = sheet.name
+            patient_record.append(patient_name)
+        return patient_record, all_sheets
+
+
+class MEMAM:
+    '''
+    This class has all the major functions those define the
+    specific emergencies, alert functions and internal paging
+
+    Activity Functions:
+    normals() - Defines the healthy ranges of the vitals
+    page() - Visulizes the messages on GUI
+    log() - Enter the activity in patient log
+    scrub() - Visualizes the nurse message on patient bedside monitor
+
+    Emergency Functions:
+    code_blue() - Alerts surgeons, resident interns, residents, equipment team
+    blood_pressure() - Alerts surgeons, resident interns, residents
+    Temperature() - Alerts resident interns, residents
+    Labor_pains() - Alerts surgeons, resident interns, residents
+    breathing() - Alerts resident interns, residents
+    Spo2_abnormal() - Alerts resident interns, residents
+
+    Alert Mechanism Functions:  (alerts through pager)
+    alert_nurse() - Alerts the central control unit of nurse station
+    nurse_ResInterns() - Nurses alert the resident interns
+    nurse_residents() - Nurses alert the residents
+    nurse_equipment() - Nurses alert the equipment team
+    nurse_surgeons() - Nurses alert the surgeons
+
+    '''
+
+    def __init__(self, data, patient_record, patient_id):
+        '''
+        The __init__ method will initialize the object’s state.
+        Initializes the function of the class when
+        an object of class is created.
+        In this case, the data, patient_record, patient_id of a specific patient
+        **Input Parameters**
+            data: *list,*
+                The patient data for a given sheet
+            patient_id: *list, str, int, optional*
+                The patient id corresponds to a specific patient
+            patient_record: **
+                The patient record has the details about the patient
+                age, room number (typical hospital register)
+        **Returns**
+            None
+        '''
+        self.data = data
+        self.patient_record = patient_record
+        self.patient_id = patient_id
+        self.logs = []
+        self.pages = []
+        self.scrubs = []
+
+    def __call__(self):
+        '''
+        The __call__ method will read and extract each row from
+        specific '.xlsx' sheets, which indeed will used for the
+        real-time display on GUI
+
+        **Input Parameters**
+            None
+        **Returns**
+            None
+        '''
+        global DATA
+        global PAGES
+        # Extracting patient data
+        patient_data = self.patient_record
+        # for splitting the sheet name to get details
+        details = patient_data.split("_")
+        # Defining the patient details
+        age = int(details[2])
+        name = details[0]
+        room_number = patient_key[name]
+        # Using normals to get safe ranges for all vitals
+        respi_para, HR_para, BP_para = self.normals(age)
+        time_data = self.data
+        # Extracting time stamps
+        time1 = time_data[0]
+        # Converting time stamps from the HH:MM:SS 24 hour format
+        x = int(time1 * 24 * 3600)  # convert to number of seconds
+        timex = timer1(x // 3600, (x % 3600) // 60, x % 60)
+        # Creating variables to use in GUI later
+        Heart_rate = 'NaN' if time_data[1] == 'NaN' else int(time_data[1])
+        BPS = 'NaN' if time_data[2] == 'NaN' else int(time_data[2])
+        BPD = 'NaN' if time_data[3] == 'NaN' else int(time_data[3])
+        respi_rate = 'NaN' if time_data[4] == 'NaN' else int(time_data[4])
+        Spo2 = 'NaN' if time_data[5] == 'NaN' else int(time_data[5])
+        temperature = 'NaN' if time_data[6] == 'NaN' else float(time_data[6])
+        pain_index = 'NaN' if time_data[7] == 'NaN' else int(time_data[7])
+        self.values = (Heart_rate, BPS, BPD, respi_rate, Spo2, temperature)
+        # Initializing the check for all emergencies
+        if time_data != DATA[self.patient_id]:
+            self.code_blue(Heart_rate, timex, HR_para, name)
+            self.blood_pressure(BPS, BPD, timex, BP_para, name)
+            self.Temperature(temperature, timex, name)
+            self.Labor_pains(pain_index, timex, name)
+            self.breathing(respi_rate, timex, respi_para, name)
+            self.Spo2_abnormal(Spo2, timex, name)
+            if self.pages != PAGES[self.patient_id]:
+                PAGES[self.patient_id] = self.pages
+            DATA[self.patient_id] = time_data
+
+    def normals(self, age):
+        '''
+        This function will determines ranges for a healthy patient
+        based on the age provided in the patient id
+
+        **Input Parameters**
+            age: *int*
+                The age of the patient
+        **Returns**
+            respi_para: *list, int*
+                The respiration rate high, low
+            HR_para: *list, int*
+                The Heart rate high , low
+            BP_para: *list, int*
+                The systolic min, max
+                The diastolic min, max
+        '''
+        # For respiration
+        if age < 1:
+            respi_high, resp_low = 40, 30
+        elif age >= 1 and age < 2:
+            respi_high, resp_low = 35, 25
+        elif age >= 2 and age < 5:
+            respi_high, resp_low = 30, 25
+        elif age >= 5 and age < 12:
+            respi_high, resp_low = 25, 20
+        elif age >= 12:
+            respi_high, resp_low = 35, 25
+
+        respi_para = [respi_high, resp_low]
+
+        # For Heart rate
+        if age < 1:
+            HR_high, HR_low = 180, 100
+        elif age >= 1 and age <= 2:
+            HR_high, HR_low = 165, 90
+        elif age >= 3 and age <= 4:
+            HR_high, HR_low = 140, 70
+        elif age >= 5 and age <= 7:
+            HR_high, HR_low = 140, 65
+        elif age >= 8 and age <= 11:
+            HR_high, HR_low = 130, 60
+        elif age >= 12 and age <= 15:
+            HR_high, HR_low = 130, 65
+        elif age >= 16:
+            HR_high, HR_low = 120, 50
+
+        HR_para = [HR_high, HR_low]
+
+        # For Blood Pressure
+        if age < 1:
+            sys_min, dia_min = 75, 50
+            sys_max, dia_max = 100, 95
+        elif age >= 1 and age <= 19:
+            sys_min, dia_min = 105, 73
+            sys_max, dia_max = 120, 81
+        elif age >= 20 and age <= 39:
+            sys_min, dia_min = 111, 78
+            sys_max, dia_max = 135, 86
+        elif age >= 40:
+            sys_min, dia_min = 121, 83
+            sys_max, dia_max = 147, 91
+
+        BP_para = [sys_min, dia_min, sys_max, dia_max]
+
+        return respi_para, HR_para, BP_para
+
+
+    def code_blue(self, Heart_rate, time, HR_para, patient_name):
+        '''
+        This function will monitor the heart rate to alert when
+        the patient experiences cardiac arrest i.e. code_blue
+
+        **Input Parameters**
+            Heart_rate: *float*
+                The heart rate of the patient at a specific second
+            time: *str*
+                The time stamp of the above vital
+            HR_para:*list*
+                The boundary conditions of the Heart rate
+                The Heart rate high , low
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 1
+        # If no discrepancies, typically vitals available
+        if Heart_rate != 'NaN':
+            if not (Heart_rate > HR_para[1] and Heart_rate < HR_para[0]):
+                # Not healthy, alerting mechanism begins
+                if counter[self.patient_id][code] == 0:
+                    self.alert_nurse('Code_Blue', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+            # if healthy, call back the staff
+            elif patient_mode[patient_name][0] == 1:
+                if counter[self.patient_id][code] == 3:
+                    patient_mode[patient_name][0] = 0
+                    # adding assited staff back to availability
+                    for i in code_ri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_ri[self.patient_id][code] = []
+                    for i in code_re[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_re[self.patient_id][code] = []
+                    for i in code_s[self.patient_id][code]:
+                        self.page(i, '', '')
+                        surgeon_list.extend([i])
+                    code_s[self.patient_id][code] = []
+                else:
+                    counter[self.patient_id][code] += 1
+
+            if patient_mode_e[patient_name][0] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][0] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+    def blood_pressure(self, BPS, BPD, time, BP_para, patient_name):
+        '''
+        This function will monitor the blood pressure to alert when
+        the patient experiences high or low BP
+
+        **Input Parameters**
+            BPS: *float*
+                The systolic blood pressure of the patient at a specific second
+            BDS: *float*
+                The diastolic blood pressure of the patient at a specific second
+            time: *str*
+                The time stamp of the above vital
+            BP_para:*list*
+                The boundary conditions of the blood pressure
+                The systolic min, max
+                The diastolic min, max
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 2
+        sys_min, dia_min = BP_para[0], BP_para[1]
+        sys_max, dia_max = BP_para[2], BP_para[2]
+        # If no discrepancies, typically vitals available
+        if BPS != 'NaN' and BPD != 'NaN':
+            # Not healthy, alerting mechanism begins
+            if not (
+                (BPS > sys_min and BPS < sys_max) and (
+                    BPD > dia_min and BPD < dia_max)):
+                if counter[self.patient_id][code] == 0:
+                    self.alert_nurse(
+                        'Blood_Pressure', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+            # if healthy, call back the staff
+            elif patient_mode[patient_name][1] == 1:
+                if counter[self.patient_id][code] == 3:
+                    patient_mode[patient_name][1] = 0
+                    for i in code_ri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_ri[self.patient_id][code] = []
+                    for i in code_re[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_re[self.patient_id][code] = []
+                    for i in code_s[self.patient_id][code]:
+                        self.page(i, '', '')
+                        surgeon_list.extend([i])
+                    code_s[self.patient_id][code] = []
+                else:
+                    counter[self.patient_id][code] += 1
+            # adding assited staff back to availability
+            if patient_mode_e[patient_name][1] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][1] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+    def Temperature(self, temperature, time, patient_name):
+        '''
+        This function will monitor the temperature to alert when
+        the patient experiences hypothemia or fever
+
+        **Input Parameters**
+            temperature: *float*
+                The temperature of the patient at a specific second
+            time: *str*
+                The time stamp of the above vital
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 3
+        if temperature != 'NaN':
+            # If no discrepancies, typically vitals available
+                if counter[self.patient_id][code] == 0:
+                    # Not healthy, alerting mechanism begins
+                    if temperature < 95 or temperature > 98.6:
+                        self.alert_nurse('Temperature', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+            # if healthy, call back the staff
+        elif patient_mode[patient_name][2] == 1:
+            if counter[self.patient_id][code] == 3:
+                patient_mode[patient_name][2] = 0
+                for i in code_ri[self.patient_id][code]:
+                    self.page(i, '', '')
+                    intern_list.extend([i])
+                code_ri[self.patient_id][code] = []
+                for i in code_re[self.patient_id][code]:
+                    self.page(i, '', '')
+                    resident_list.extend([i])
+                code_re[self.patient_id][code] = []
+            else:
+                counter[self.patient_id][code] += 1
+            # adding assited staff back to availability
+            if patient_mode_e[patient_name][2] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][2] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+    def Labor_pains(self, pain_index, time, patient_name):
+        '''
+        This function will cast the labor pains to alert when
+        the patient expresses his pain, in a hospital setting,
+        it is usually a button
+
+        **Input Parameters**
+            pain_index: *float*
+                The pain indication of the patient at a specific second
+                Values are binary 1 or 0
+            time: *str*
+                The time stamp of the above indication
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 4
+        if pain_index != 'NaN':
+            if pain_index == 1:
+                if counter[self.patient_id][code] == 0:
+                    self.alert_nurse('Labor_Pains', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+
+            elif patient_mode[patient_name][3] == 1:
+                if counter[self.patient_id][code] == 3:
+                    patient_mode[patient_name][3] = 0
+                    for i in code_ri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_ri[self.patient_id][code] = []
+                    for i in code_re[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_re[self.patient_id][code] = []
+                    for i in code_s[self.patient_id][code]:
+                        self.page(i, '', '')
+                        surgeon_list.extend([i])
+                    code_s[self.patient_id][code] = []
+                else:
+                    counter[self.patient_id][code] += 1
+
+            if patient_mode_e[patient_name][3] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][3] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+    def breathing(self, respi_rate, time, respi_para, patient_name):
+        '''
+        This function will monitor the respiration rates to alert when
+        the patient suffers with breathing issues
+
+        **Input Parameters**
+            respi_rate: *float*
+                The respiration rate of the patient at a specific second
+            time: *str*
+                The time stamp of the above vital
+            respi_para:*list*
+                The boundary conditions of the respiration rates
+                The respiration rate high and low
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 5
+        if respi_rate != 'NaN':
+            if not (respi_rate > respi_para[1] and respi_rate < respi_para[0]):
+                if counter[self.patient_id][code] == 0:
+                    self.alert_nurse('Breathing', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+
+            elif patient_mode[patient_name][4] == 1:
+                if counter[self.patient_id][code] == 3:
+                    patient_mode[patient_name][4] = 0
+                    for i in code_ri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_ri[self.patient_id][code] = []
+                    for i in code_re[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_re[self.patient_id][code] = []
+                else:
+                    counter[self.patient_id][code] += 1
+
+            if patient_mode_e[patient_name][4] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][4] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+    def Spo2_abnormal(self, Spo2, time, patient_name):
+        '''
+        This function will monitor the oxygen saturation to alert when
+        the patient suffers with breathing issues
+
+        **Input Parameters**
+            Spo2: *float*
+                The oxygen saturation to the patient at a specific second
+            time: *str*
+                The time stamp of the above vital
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # global variables
+        global EQUIPMENT_COUNT
+        global counter
+        global counter_e
+        code = 6
+        if Spo2 != 'NaN':
+            if Spo2 < 95:
+                if counter[self.patient_id][code] == 0:
+                    self.alert_nurse('Spo2_abnormal', patient_name, time, code)
+                else:
+                    counter[self.patient_id][code] -= 1
+
+            elif patient_mode[patient_name][5] == 1:
+                if counter[self.patient_id][code] == 3:
+                    patient_mode[patient_name][5] = 0
+                    for i in code_ri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_ri[self.patient_id][code] = []
+                    for i in code_re[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_re[self.patient_id][code] = []
+                else:
+                    counter[self.patient_id][code] += 1
+
+            if patient_mode_e[patient_name][5] == 1:
+                if counter_e[self.patient_id][code] == 3:
+                    patient_mode_e[patient_name][5] = 0
+                    for i in code_eri[self.patient_id][code]:
+                        self.page(i, '', '')
+                        intern_list.extend([i])
+                    code_eri[self.patient_id][code] = []
+                    for i in code_ere[self.patient_id][code]:
+                        self.page(i, '', '')
+                        resident_list.extend([i])
+                    code_ere[self.patient_id][code] = []
+                    EQUIPMENT_COUNT += 1
+                else:
+                    counter_e[self.patient_id][code] += 1
+        else:
+            # Indicating equipment failure for NaN values
+            if counter_e[self.patient_id][code] == 0:
+                self.alert_nurse('equipment_failure', patient_name, time, code)
+            else:
+                counter_e[self.patient_id][code] -= 1
+
+
+    def alert_nurse(self, code_emergency, patient_name, time, codes):
+        '''
+        This function will alert the nursing station about the patient
+        emergency and will start paging protocols
+
+        **Input Parameters**
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+            time: *str*
+                The time stamp of the above vital
+            codes: *int*
+            The control parameters for alerting mechanism
+        **Returns**
+            None
+        '''
+        code = codes
+        if code_emergency == 'Code_Blue':
+            if patient_mode[patient_name][0] != 1:
+                patient_mode[patient_name][0] = 1
+                self.log(time, 'Code Blue identified',
+                         'Alerting the nursing station', patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_surgeons(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(
+                    time,
+                    'Code Blue',
+                    'Nurse station alerted',
+                    patient_name)
+
+        if code_emergency == 'Blood_Pressure':
+            if patient_mode[patient_name][1] != 1:
+                patient_mode[patient_name][1] = 1
+                self.log(
+                    time,
+                    'Blood pressure',
+                    'Alerting the nursing station',
+                    patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_surgeons(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(
+                    time,
+                    'Blood pressure',
+                    'Nurse station alerted',
+                    patient_name)
+
+        if code_emergency == 'Temperature':
+            if patient_mode[patient_name][2] != 1:
+                patient_mode[patient_name][2] = 1
+                self.log(
+                    time,
+                    'Temperature',
+                    'Alerting the nursing station',
+                    patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(time, 'Temperature nurse station',
+                         'Nurse station alerted', patient_name)
+
+        if code_emergency == 'Labor_Pains':
+            if patient_mode[patient_name][3] != 1:
+                patient_mode[patient_name][3] = 1
+                self.log(
+                    time,
+                    'Labor_pains',
+                    'Alerting the nursing station',
+                    patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_surgeons(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(
+                    time,
+                    'Labor_pains',
+                    'Nurse station alerted',
+                    patient_name)
+
+        if code_emergency == 'Breathing':
+            if patient_mode[patient_name][4] != 1:
+                patient_mode[patient_name][4] = 1
+                self.log(time, 'Breathing obstruction',
+                         'Alerting the nursing station', patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(time, 'Breathing obstruction',
+                         'Nurse station alerted', patient_name)
+
+        if code_emergency == 'Spo2_abnormal':
+            if patient_mode[patient_name][5] != 1:
+                patient_mode[patient_name][5] = 1
+                self.log(
+                    time,
+                    'Spo2 abnormal',
+                    'Alerting the nursing station',
+                    patient_name)
+                self.nurse_ResInterns(code_emergency, patient_name, time, code)
+                self.nurse_residents(code_emergency, patient_name, time, code)
+                self.log(
+                    time,
+                    'Spo2 abnormal',
+                    'Nurse station alerted',
+                    patient_name)
+
+        if code_emergency == 'equipment_failure':
+            if patient_mode_e[patient_name][code - 1] != 1:
+                patient_mode_e[patient_name][code - 1] = 1
+                self.log(time, 'Equipment Failure detected',
+                         'Alerting nurse station', patient_name)
+                self.nurse_equipment(code_emergency, patient_name, time, code)
+                self.log(
+                    time,
+                    'Equipment Failure',
+                    'Nurse station alerted',
+                    patient_name)
+
+
+    def nurse_ResInterns(self, code_emergency, patient_name, time, codes):
+        '''
+        This function will let the nurses alert resident interns about the
+        patient emergency and will start paging protocols
+
+        **Input Parameters**
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+            time: *str*
+                The time stamp of the above vital
+            codes: *int*
+            The control parameters for alerting mechanism
+        **Returns**
+            None
+        '''
+        # Calculating the number of interns
+        code = codes
+        intern_count = len(intern_list)
+        # If there are available interns
+        if intern_count > 1:
+            # intern1 = intern_list.pop()
+            intern1 = random.choice(intern_list)
+            intern_list.remove(intern1)
+            # intern2 = intern_list.pop()
+            intern2 = random.choice(intern_list)
+            intern_list.remove(intern2)
+            code_ri[self.patient_id][code].extend([intern1, intern2])
+
+            for i in code_ri[self.patient_id][code]:
+                self.page(i, code_emergency, patient_name)
+                self.log(time, 'Paging', i, patient_name)
+
+    def nurse_residents(self, code_emergency, patient_name, time, codes):
+        '''
+        This function will let the nurses alert residents about the
+        patient emergency and will start paging protocols
+
+        **Input Parameters**
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+            time: *str*
+                The time stamp of the above vital
+            codes: *int*
+            The control parameters for alerting mechanism
+        **Returns**
+            None
+        '''
+        code = codes
+        resident_count = len(resident_list)
+        # If there are available interns
+        if resident_count > 0:
+            # resident = resident_list.pop()
+            resident = random.choice(resident_list)
+            resident_list.remove(resident)
+            code_re[self.patient_id][code].extend([resident])
+
+            for i in code_re[self.patient_id][code]:
+                self.page(i, code_emergency, patient_name)
+                self.log(time, 'Paging', i, patient_name)
+
+    def nurse_equipment(self, code_emergency, patient_name, time, codes):
+        '''
+        This function will let the nurses alert equipment team about the
+        patient emergency and will start paging protocols
+
+        **Input Parameters**
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+            time: *str*
+                The time stamp of the above vital
+            codes: *int*
+            The control parameters for alerting mechanism
+        **Returns**
+            None
+        '''
+        # Recurring the global values to update
+        global EQUIPMENT_COUNT
+        code = codes
+        intern_count = len(intern_list)
+        resident_count = len(resident_list)
+        # If there are available interns
+        if intern_count > 0:
+
+            intern1 = random.choice(intern_list)
+            # intern1 = intern_list.pop()
+            intern_list.remove(intern1)
+            code_eri[self.patient_id][code].extend([intern1])
+            for i in code_eri[self.patient_id][code]:
+                self.page(i, code_emergency, patient_name)
+                self.log(time, 'Paging', i, patient_name)
+
+        if resident_count > 0:
+            resident1 = random.choice(resident_list)
+            # resident1 = resident_list.pop()
+            resident_list.remove(resident1)
+            code_ere[self.patient_id][code].extend([resident1])
+            for i in code_ere[self.patient_id][code]:
+                self.page(i, code_emergency, patient_name)
+                self.log(time, 'Paging', i, patient_name)
+
+        if EQUIPMENT_COUNT > 0:
+            self.page('Equipment_team', code_emergency, patient_name)
+            self.log(time, 'Paging', 'Equipment Team', patient_name)
+            self.scrub(time, 'Equipment dispatched', patient_name)
+            # print("Defibrillator dispatch initiated to room %s" %
+            #       patient_key[patient_name])
+            EQUIPMENT_COUNT -= 1
+            self.scrub(time, 'Equipment ready', patient_name)
+
+        else:
+            self.scrub(time, 'Manual work', patient_name)
+            self.log(time, 'alarm room', 'nurse station', patient_name)
+
+    def nurse_surgeons(self, code_emergency, patient_name, time, codes):
+        '''
+        This function will let the nurses alert surgeons about the
+        patient emergency and will start paging protocols
+
+        **Input Parameters**
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+            time: *str*
+                The time stamp of the above vital
+            codes: *int*
+            The control parameters for alerting mechanism
+        **Returns**
+            None
+        '''
+        code = codes
+        surgeon_count = len(surgeon_list)
+        # If there are available interns
+        if surgeon_count > 0:
+
+            # surgeon = surgeon_list.pop()
+            surgeon = random.choice(surgeon_list)
+            surgeon_list.remove(surgeon)
+            code_s[self.patient_id][code].extend([surgeon])
+            for i in code_s[self.patient_id][code]:
+                self.page(i, code_emergency, patient_name)
+                self.log(time, 'Paging', i, patient_name)
+
+    def page(self, receiver_name, code_emergency, patient_name):
+        '''
+        This function will alert the specific hospital staff
+        and can be visualized the GUI on pagers tab
+
+        **Input Parameters**
+            receiver_name: *str*
+                The name of the specific hospital staff
+            code_emergency: *str*
+                The name of the emergency
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        if patient_name == '':
+            storage = (receiver_name, code_emergency, patient_name, '')
+        else:
+            storage = (
+                receiver_name,
+                code_emergency,
+                patient_name,
+                patient_key[patient_name])
+        self.pages.append(storage)
+
+    def log(self, time, activity, specific_person, patient_name):
+        '''
+        This function will log all the activities done for a
+        patient during emergencies
+
+        **Input Parameters**
+            time: *str*
+                The time stamp of the above emergency
+            activity: *str*
+                The activity performed during the emergency
+            specific_person: *str*
+                The name of the specific person
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        text = f"{time}  {activity} - {specific_person} for patient {patient_name} \n"
+        files = 'patient' + str(self.patient_id + 1) + '.txt'
+        self.logs.append(text)
+        with open(files, "a") as file:
+            file.write(
+                f"{time}  {activity} - {specific_person} for patient {patient_name} \n")
+
+    def scrub(self, time, message, patient_name):
+        '''
+        This function will send an alert to the bedside monitor
+        that equipment is not available and manual CPR is needed
+
+        **Input Parameters**
+            time: *str*
+                The time stamp of the above emergency
+            message: *str*
+                Indicates no machines available
+            patient_name:*str*
+                The name of the patient being monitored
+        **Returns**
+            None
+        '''
+        # Entering the text file
+        text = f"{time} - {message} for patient {patient_name} at room {patient_key[patient_name]}\n"
+        self.scrubs.append(text)
+
 class Visualisation(tk.Tk):
     '''
     This class establishes all the pages of the GUIDE
@@ -1290,3 +2379,295 @@ class Nurse(tk.Frame):
             self.after(1000, live_update)
 
         live_update()
+
+class Protection:
+    '''
+    This class handles patient data log protection in terms of encrypting
+    and decrypting the information based on the provided usernames and
+    passwords combinations
+    Step 1: Read the .xlsx extension files only.
+    Step 2: Identifying specific patient identification details
+    Step 3: Creating time domain data for each vital by extracting rows
+    '''
+
+    def __init__(self, file):
+        '''
+        The __init__ method will initialize the object’s state.
+        Initializes the function of the class when
+        an object of class is created.
+        In this case, the data, patient_record, patient_id of a specific patient
+        **Input Parameters**
+            file: *str*
+                The file name to be encrypted
+        **Returns**
+            None
+        '''
+        self.file = file
+
+    def encrypt(self, message, N, E):
+        '''
+        This function will encrypt any string
+
+        **Input Parameters**
+            message: *str*
+                The message to be encrypted
+            N, E: *int* (pre-defined)
+                Essential values for encryption
+        **Returns**
+            encrypted_message: *list, int*
+                Each number represents a encrypted message of one character
+        '''
+        return [(ord(s) ** E) % N for s in message]
+
+    def password(self, enc_msg, usr, passwd, N, D):
+        '''
+        Code to check username / password combinations goes here.
+        Store your usernames, salted password hashes, and
+        corresponding salts appropriately.
+        Return the decrypted message if the username and password are correct
+        **Input Parameters**
+            enc_msg: *list, str*
+                The encrypted message as a list
+            usr: *char, optional*
+                The username to access the file
+            passwd: *char, optional*
+                The password to access the file
+            N, D: *int*
+                Essential values for decryption
+        **Returns**
+            Decrypted: *list*
+                Returns the message if combination is right
+        '''
+
+        def decrypt(enc_msg, N, D):
+            '''
+            This function will decrypt any encrypted message
+
+            **Input Parameters**
+                enc_msg: *List, int, optional*
+                    The list of integers for decryption
+                N, D: *int*
+                    Essential values for decryption
+            **Returns**
+                decrypted_message: *str*
+                    The decrypted message
+            '''
+            return ''.join([chr((s ** D) % N) for s in enc_msg])
+
+        # Database with two combinations
+        # ("hherbol1", 'Fifa'), ("krypto12", 'Superman123')
+        # Database Structure
+        # key: username, value:[hashed_password,salt]
+        user_pass = {
+            "hherbol1": [
+                '936aae4aa826dc4607b7f51c06a6fc6cc923ffe80d067f6b4ba541d03deca11a0863ab90c61265e3023b761940cb449ed0aebea1aae966c109b78180072e410f',
+                'randomsa7hfff8fbaf77392hfhskjhdfkfdshkhdkfhsdsfhso'],
+            "krypto12": [
+                'ac02ff13718005e12966ed52da93ff1c84c754613e04244a84726745239bc56e24a95235b1021a0a795528dd280b12f098c2f19a05924c35b4953991208eb867',
+                'randomsaltsaregood123gbsdxxsfksjfsh&bsdfksdflsjkdf']}
+        # For printing incorrect combinations
+        error_message = ''
+        # if username is valid
+        if usr in user_pass:
+            """Hash a password for storing."""
+            # verify the password
+            stored_password = user_pass.get(usr)[0]
+            salt = user_pass.get(usr)[1]
+            # hashing the provided password
+            hashed = hashlib.sha512((passwd + salt).encode())
+            hashed_pass = hashed.hexdigest()
+            # Compare generated and database password
+            if (hashed_pass == stored_password) is True:
+                decrypted = decrypt(enc_msg, N, D)
+                return decrypted
+            else:
+                # To return the feedback to the user
+                # Ref read_messages function
+                error_message = 'incorrect_pass'
+                return error_message
+        # if username is not valid
+        else:
+            # To return the feedback to the user
+            # Ref read_messages function
+            error_message = 'incorrect_username'
+            return error_message
+
+    def start_messenger(self, N=17947, E=7):
+        '''
+        This function reads in each line of input from the user,encrypts each
+        line, and stores them in a list. Each line of encrypted text is written
+        to a text file, the name of which is specified by "msg ftpr".
+
+        **Input Parameters**
+
+            N, E: *int*
+                Essential values for encryption
+        **Returns**
+           msg_fptr: *file*
+                the text file with encrypted data
+        '''
+        if ".txt" in self.file:
+            filename = self.file.split(".txt")[0]
+        msg_fptr = filename + '_pass' + '.txt'
+        new_file = open(msg_fptr, 'w')
+
+        # while True:
+        #     word = str(input("Enter message or STOP to end:"))
+        #     if word == 'STOP':
+        #         break
+        #     else:
+        file1 = open(self.file, 'r')
+        Lines = file1.readlines()
+        count = 0
+        # Strips the newline character
+        for line in Lines:
+            list = self.encrypt(line, N, E)
+            for item in list:
+                new_file.write(str(item) + '\t')
+            new_file.write("\n")
+        new_file.close()
+        return msg_fptr
+
+    def read_messages(self, usr, passwd, msg_fptr, N=17947, D=10103):
+        '''
+        Asks the user for their username and password. Reads the encrypted text
+        from "msg fptr" and decrypts it if the username / password combination is
+        correct.
+        **Input Parameters**
+            usr: *char, optional*
+                The username to access the file
+            passwd: *char, optional*
+                The password to access the file
+            msg_fptr: *str*
+                Name of the text file
+            N, D: *int*
+                Essential values for decryption
+        **Returns**
+           None
+        '''
+
+        # prompt for username and password
+        # usr = input("Enter the username:")
+        # No echoing on
+        # passwd = getpass.getpass(prompt="Enter the password:")
+        # passwd = getpass.getpass(passwd)
+        # Handling exceptions for inputs
+        if len(usr) == 0 and len(passwd) != 0:
+            print('Username not entered')
+        elif len(usr) != 0 and len(passwd) == 0:
+            print('Password not entered')
+        elif len(usr) == 0 and len(passwd) == 0:
+            print('Username and Password not entered')
+        else:
+            mfile = open(msg_fptr)
+            lines = mfile.readlines()
+            int_list = []
+            for line in lines:
+                list = line.split()
+                temp_list = []
+                for item in list:
+                    temp_list.append(int(item))
+                int_list.append(temp_list)
+
+            for i in range(len(int_list)):
+                message_list = self.password(int_list[i], usr, passwd, N, D)
+                if i == 0:
+                    if message_list == 'incorrect_pass':
+                        print("Oops! The password is incorrect for the username")
+                    elif message_list == 'incorrect_username':
+                        print("Oops! The username does not exist in the database")
+                    else:
+                        print("The username and password are valid")
+                string1 = 'incorrect_username'
+                string2 = 'incorrect_pass'
+                if message_list != string1 and message_list != string2:
+                    print(message_list)
+
+
+def unit_tests():
+    '''
+    This functions handles the unit tests to verify independent codes
+    **Input Parameters**
+        None
+    **Returns**
+       None
+    '''
+    # Case1: True Positive
+    message1 = "Test"
+    enc1 = Protection(message1)
+    encrypted_message = enc1.encrypt(message1, N=17947, E=7)
+    decrypted_message = enc1.password(
+        encrypted_message, "hherbol1", "Fifa", N=17947, D=10103)
+    if (message1 == decrypted_message):
+        print("Case 1: Unit test succeded")
+    else:
+        print("Case 1: Unit test failed")
+
+    # Case 2: False Positive
+    message = "Test"
+    enc2 = Protection(message)
+    encrypted_message = enc2.encrypt(message, N=17947, E=7)
+    message2 = "Test2"
+    encrypted_message1 = enc2.encrypt(message2, N=17947, E=7)
+    decrypted_message = enc2.password(
+        encrypted_message, "krypto12", "Fifa", N=17947, D=10103)
+    if (message == decrypted_message):
+        print("Case 2: Unit test failed")
+    else:
+        print("Case 2: Unit test succeded")
+
+
+if __name__ == '__main__':
+    # Start the main program
+    print('MEMAM is executing')
+    show = False
+    # prompt the user if they want see the log printed in terminal
+    val = input('Do you want to print the patient log data (y/n): ')
+    if val == 'n':
+        print('MEMAM has your data protected')
+    elif val == 'y':
+        # ("hherbol1", 'Fifa'), ("krypto12", 'Superman123')
+        username = input('Enter usename: ')
+        password = getpass.getpass(prompt="Enter the password:")
+        show = True
+    else:
+        raise SystemExit('Invalid choice: Rerun the code')
+    # Checking for existence of files
+    filename = 'patient1.txt'
+    if os.path.exists(filename):
+        os.remove(filename)
+    else:
+        pass
+    filename = 'patient2.txt'
+    if os.path.exists(filename):
+        os.remove(filename)
+    else:
+        pass
+    # Initiating the main real-time update
+    # using GUI
+    path = "patient_log1.xlsx"
+    # Update the records
+    record1 = Input(path, 0)
+    record2 = Input(path, 1)
+    patient_1, patient_record_1 = record1()
+    patient_2, patient_record_2 = record2()
+    # Main visualization
+    app = Visualisation()
+    app.mainloop()
+    # tim.sleep(10)
+    enc1 = Protection('patient1.txt')
+    encrypted1 = enc1.start_messenger()
+    enc2 = Protection('patient2.txt')
+    encrypted2 = enc2.start_messenger()
+    if show:
+        print('Printing patient 1: log data')
+        messages = enc1.read_messages(username, password, encrypted1)
+        print('-------------------------------')
+        print('Printing patient 2: log data')
+        messages = enc2.read_messages(username, password, encrypted2)
+
+    print('Testing Unit Test Function')
+    # Unit tests to valid, optional
+    # Comment i to stop
+    unit_tests()
+
