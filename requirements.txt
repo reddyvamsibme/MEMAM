@@ -1,0 +1,7 @@
+xlrd
+#tkinter
+#tkmacosx
+#time
+#datetime
+hashlib
+getpass
