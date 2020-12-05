@@ -85,7 +85,6 @@ PAGES = [[], []]
 EQUIPMENT_COUNT = 10
 
 
-
 class Input:
     '''
     This class handles reading and extraction of patient's vitals from bedside
@@ -335,7 +334,6 @@ class MEMAM:
 
         return respi_para, HR_para, BP_para
 
-
     def code_blue(self, Heart_rate, time, HR_para, patient_name):
         '''
         This function will monitor the heart rate to alert when
@@ -511,12 +509,12 @@ class MEMAM:
         code = 3
         if temperature != 'NaN':
             # If no discrepancies, typically vitals available
-                if counter[self.patient_id][code] == 0:
-                    # Not healthy, alerting mechanism begins
-                    if temperature < 95 or temperature > 98.6:
-                        self.alert_nurse('Temperature', patient_name, time, code)
-                else:
-                    counter[self.patient_id][code] -= 1
+            if counter[self.patient_id][code] == 0:
+                # Not healthy, alerting mechanism begins
+                if temperature < 95 or temperature > 98.6:
+                    self.alert_nurse('Temperature', patient_name, time, code)
+            else:
+                counter[self.patient_id][code] -= 1
             # if healthy, call back the staff
         elif patient_mode[patient_name][2] == 1:
             if counter[self.patient_id][code] == 3:
@@ -751,7 +749,6 @@ class MEMAM:
             else:
                 counter_e[self.patient_id][code] -= 1
 
-
     def alert_nurse(self, code_emergency, patient_name, time, codes):
         '''
         This function will alert the nursing station about the patient
@@ -868,7 +865,6 @@ class MEMAM:
                     'Equipment Failure',
                     'Nurse station alerted',
                     patient_name)
-
 
     def nurse_ResInterns(self, code_emergency, patient_name, time, codes):
         '''
@@ -1086,6 +1082,7 @@ class MEMAM:
         # Entering the text file
         text = f"{time} - {message} for patient {patient_name} at room {patient_key[patient_name]}\n"
         self.scrubs.append(text)
+
 
 class Visualisation(tk.Tk):
     '''
@@ -2380,6 +2377,7 @@ class Nurse(tk.Frame):
 
         live_update()
 
+
 class Protection:
     '''
     This class handles patient data log protection in terms of encrypting
@@ -2607,11 +2605,11 @@ def unit_tests():
     message = "Test"
     enc2 = Protection(message)
     encrypted_message = enc2.encrypt(message, N=17947, E=7)
-    message2 = "Test2"
+    message2 = "Test_2"
     encrypted_message1 = enc2.encrypt(message2, N=17947, E=7)
     decrypted_message = enc2.password(
-        encrypted_message, "krypto12", "Fifa", N=17947, D=10103)
-    if (message == decrypted_message):
+        encrypted_message1, "krypto12", "Fifa", N=17947, D=10103)
+    if (message != decrypted_message):
         print("Case 2: Unit test failed")
     else:
         print("Case 2: Unit test succeded")
@@ -2670,4 +2668,3 @@ if __name__ == '__main__':
     # Unit tests to valid, optional
     # Comment i to stop
     unit_tests()
-
