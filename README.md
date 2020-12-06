@@ -83,8 +83,8 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 4: Attach the Scrub Message
     + Step 5: Run the class MEMAM function to get the data
 
-* **Class Patient_2**
-    This class is highlights the vitals of Patient 2 including the Patient log
+* **Class Patient_2** \
+    This class is highlights the vitals of Patient 1 including the Patient log
     
     + Step 1: Define the layout of the Page
     + Step 2: Define the vitals of the patient
@@ -93,7 +93,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 5: Run the class MEMAM function to get the data
 
 
-* **Class Surgeons**
+* **Class Surgeons**\
     This class depicts the surgeons pager's view the atient log
     
     + Step 1: Define the layout of the Page
@@ -101,7 +101,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 3: Page the required surgeon when MEMAM is called
 
 
-* **Class Residents**
+* **Class Residents**\
     This class depicts the residents pager's view the Patient log
     
     + Step 1: Define the layout of the Page
@@ -109,7 +109,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 3: Page the required residents when MEMAM is called
 
     
-* **Class Interns1**
+* **Class Interns1**\
     This class depicts the first batch of intens pager's view the Patient log
     
     + Step 1: Define the layout of the Page
@@ -123,7 +123,7 @@ The code is documented in PEP8 style formatting with clear comments and designed
     + Step 2: Define the layout
     + Step 3: Connect the different pages of the GUIDE with buttons
 
-* **Class Protection**
+* **Class Protection**\
     This class handles patient data log protection using username & passwords
     
     + Step 1: Read the .xlsx extension files only.
